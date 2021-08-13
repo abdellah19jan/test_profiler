@@ -1,186 +1,4 @@
 # Databricks notebook source
-#==============================#
-# Charger le fichier de config #
-#==============================#
-
-source("code/config.R", encoding = "UTF-8")
-
-#==========================================#
-# Récupérer la date de fin de l'historique #
-#==========================================#
-
-get_rng <- function() {
-  
-  to <- readline(prompt = "End date Histo excl. (default 1st of last month) : ")
-  to <- if_else(to == "",
-                floor_date(today(), unit = "month") - months(1),
-                floor_date(ymd(to), unit = "month")
-  )
-  
-  list(from = to - years(), to = to)
-  
-}
-
-#===============================================================#
-# Récupérer le chemin du fichier EXCEL du suivi des engagements #
-#===============================================================#
-
-get_se_path <- function() {
-  
-  file <- readline(prompt = "Excel file name without extension (Suivi des Engagements) : ")
-  
-  if (file == "") {
-    
-    ""
-    
-  } else {
-    
-    str_c("run/input/", file, ".xlsx")
-    
-  }
-  
-}
-
-#======================================================#
-# Récupérer la date d'extraction du carnet de commande #
-#======================================================#
-
-get_cc_date <- function() {
-  
-  readline(prompt = "Date of the Carnet de Commande's extraction (yyyy-mm-dd) : ")
-  
-}
-
-#==============================================================#
-# Récupérer le chemin du fichier CSV des résultats du PROFILER #
-#==============================================================#
-
-get_csv_path <- function() {
-  
-  file <- readline(prompt = "CSV file name (without extension) : ")
-  
-  str_c("run/output/", file, ".csv")
-  
-}
-
-#========================================================================#
-# Récupérer le chemin du fichier CSV des résultats du carnet de commande #
-#========================================================================#
-
-get_cc_path <- function() {
-  
-  file <- readline(prompt = "CSV file name (without extension) : ")
-  
-  str_c("run/cc/output/", file, ".csv")
-  
-}
-
-#==========================#
-# Récupérer le code du PCE #
-#==========================#
-
-get_pce <- function() {
-  
-  readline(prompt = "PCE code : ")
-  
-}
-
-#=======================================================#
-# Récupérer le nom du dossier contenant les historiques #
-#=======================================================#
-
-get_dir <- function() {
-  
-  dir <- readline(prompt = "Directory containing historical data by PCE : ")
-  
-  str_c("run/output/", dir)
-  
-}
-
-#================================================================#
-# Récupérer le delta de température pour calculer la sensibilité #
-#================================================================#
-
-get_delta_temp <- function() {
-  
-  dt <- readline(prompt = "Delta temperature in °C (default 0) : ")
-  
-  if_else(dt == "", 0, suppressWarnings(as.double(dt)))
-  
-}
-
-#=================================================================#
-# Récupérer le nombre de lignes dans un lot du carnet de commande #
-#=================================================================#
-
-get_n_lines <- function() {
-  
-  nb <- readline(prompt = "Number of lines in a batch (default 1000) : ")
-  
-  if_else(nb == "", 1000L, suppressWarnings(as.integer(nb)))
-  
-}
-
-#================================================#
-# Récupérer y/n : y = avec prédictions de OPTEAM #
-#================================================#
-
-get_with_opteam <- function() {
-  
-  y_n <- readline(prompt = "Include Opteam forecasts in the output (y/n, default y) : ")
-  
-  if (y_n == "n") {
-    
-    FALSE
-    
-  } else {
-    
-    TRUE
-    
-  }
-  
-}
-
-#================================#
-# Récupérer y/n : y = avec HISTO #
-#================================#
-
-get_with_histo <- function() {
-  
-  y_n <- readline(prompt = "Include histo in the output (y/n, default n) : ")
-  
-  if (y_n == "y") {
-    
-    TRUE
-    
-  } else {
-    
-    FALSE
-    
-  }
-  
-}
-
-#================================================#
-# Récupérer y/n : y = appliquer tous les modèles #
-#================================================#
-
-get_all_mod <- function() {
-  
-  y_n <- readline(prompt = "Apply all models (y/n, default n) : ")
-  
-  if (y_n == "y") {
-    
-    TRUE
-    
-  } else {
-    
-    FALSE
-    
-  }
-  
-}
-
 #====================================#
 # Charger les données de calibration #
 #====================================#
@@ -402,9 +220,7 @@ forecast_new_car <- function(data_client,
 # Fonction de calibration #
 #=========================#
 
-run_calibration <- function() {
-  
-  rng  <- get_rng()
+run_calibration <- function(rng) {
   
   data_calib <- load_data_calib()
   
@@ -446,7 +262,7 @@ batch <- function(data_client,
 # Fonction de simulation pour le suivi des engagements #
 #======================================================#
 
-run_suivi_engagement <- function() {
+run_suivi_engagement <- function(path_se, rng, dt) {
   
   if (!dir.exists("conso"     )) {dir.create("conso"     )}
   if (!dir.exists("log"       )) {dir.create("log"       )}
@@ -455,10 +271,6 @@ run_suivi_engagement <- function() {
   logfile <- str_c("log/se_", format(now(), "%Y-%m-%d_%Hh%Mmin%Ss"), ".log")
   file.create(logfile)
   logger <- create.logger(logfile = logfile, level = "INFO")
-  
-  path_se <- get_se_path()
-  rng     <- get_rng()
-  dt      <- get_delta_temp()
   
   t <- now()
   
@@ -617,7 +429,7 @@ write_batch <- function(data_client,
 # Fonction de simulation pour le carnet de commande #
 #===================================================#
 
-run_carnet_commande <- function() {
+run_carnet_commande <- function(cc_date, nb, with_opteam, with_histo, all_mod, rng, dt) {
   
   logfile <- str_c("log/cc_", format(now(), "%Y-%m-%d_%Hh%Mmin%Ss"), ".log")
   file.create(logfile)
@@ -628,14 +440,6 @@ run_carnet_commande <- function() {
   if (!dir.exists("run/cc/batch"   )) {dir.create("run/cc/batch"   )}
   if (!dir.exists("run/cc/reliquat")) {dir.create("run/cc/reliquat")}
   if (!dir.exists("run/cc/output"  )) {dir.create("run/cc/output"  )}
-  
-  cc_date     <- get_cc_date()
-  nb          <- get_n_lines()
-  with_opteam <- get_with_opteam()
-  with_histo  <- get_with_histo()
-  all_mod     <- get_all_mod()
-  rng         <- get_rng()
-  dt          <- get_delta_temp()
   
   t <- now()
   
@@ -1023,65 +827,3 @@ write_cc <- function() {
   
 }
 
-#========================#
-# Fonction de simulation #
-#========================#
-
-run_simulation <- function(json_input) {
-  
-  if (!dir.exists("log")) {dir.create("log")}
-  
-  logfile <- str_c("log/c3_", format(now(), "%Y-%m-%d_%Hh%Mmin%Ss"), ".log")
-  file.create(logfile)
-  logger <- create.logger(logfile = logfile, level = "INFO")
-  
-  info(logger, "Loading client's data & temperatures from JSON")
-  input <- fromJSON(json_input)
-  
-  data_client <- as_tibble(input$donnees_clients) %>%
-    rename(simul = id_simulation, start = debut, end = fin, dataconso = donnees_consos) %>%
-    mutate(station   = str_pad(station, width=8, pad = "0"),
-           start     = ymd(start),
-           end       = ymd(end) - days(),
-           dataconso = map(dataconso, as_tibble),
-           dataconso = map(dataconso, rename, from = debut, to = fin),
-           dataconso = map(dataconso, mutate, from = ymd(from), to = ymd(to), conso = conso / 1000),
-           pc        = NA_character_,
-           zet       = NA_character_,
-           operator  = NA_character_,
-           tarif     = NA_character_,
-           car       = NA_real_,
-           freq      = NA_character_,
-           opteam    = list(NULL),
-           mod       = NA_character_,
-           name      = NA_character_
-    )
-  
-  data_temp <- as_tibble(input$temps_stations) %>%
-    mutate(station = str_pad(station,  width=8, pad = "0")) %>%
-    unnest(temps) %>%
-    mutate(date = ymd(date))
-  
-  rng <- list(from = ymd(input$dates_profiler$calibration_date_debut),
-              to   = ymd(input$dates_profiler$calibration_date_fin)
-  )
-  
-  info(logger, "Loading static data from CSV")
-  data_static <- load_data_static()
-  
-  info(logger, "Loading 'bouclage' models from RDS")
-  data_model  <- load_data_model()
-  
-  info(logger, "Checking data consistency")
-  if (check_data(data_static, data_client, data_temp, data_model, rng, 0)) {
-    
-    info(logger, "Forecasting consumptions")
-    r <- forecast_JJ(data_client, data_static, data_temp, data_model, rng, 0, FALSE, TRUE)
-    
-  }
-  
-  info(logger, "Profiler termination")
-
-  r 
-  
-}

@@ -1,12 +1,16 @@
 # Databricks notebook source
-#=======================================================#
-#  I - Charger le fichier main.R                        #
-#=======================================================#
+setwd("/dbfs/FileStore/shared_uploads/HH6011/test_profiler")
 
-source("code/main.R", encoding = "UTF-8")
+# COMMAND ----------
 
-#=======================================================#
-# II - Calibrer le modèle de bouclage pour tous les ZET #
-#=======================================================#
+# MAGIC %run /Repos/HH6011/test_profiler/code/config
 
-run_calibration()
+# COMMAND ----------
+
+#==================================================#
+# Calibrer le modèle de bouclage pour tous les ZET #
+#==================================================#
+
+rng <- list(from = ymd("2020-07-01"), to = ymd("2021-07-01"))
+
+run_calibration(rng)

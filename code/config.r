@@ -1,10 +1,29 @@
 # Databricks notebook source
+# MAGIC %run /Repos/HH6011/test_profiler/code/main
+
+# COMMAND ----------
+
+# MAGIC %run /Repos/HH6011/test_profiler/code/load
+
+# COMMAND ----------
+
+# MAGIC %run /Repos/HH6011/test_profiler/code/util
+
+# COMMAND ----------
+
+# MAGIC %run /Repos/HH6011/test_profiler/code/model
+
+# COMMAND ----------
+
+# MAGIC %run /Repos/HH6011/test_profiler/code/car
+
+# COMMAND ----------
+
 options(tidyverse.quiet = TRUE)
 
 library(comprehenr)
 library(odbc)
 library(RPostgres)
-library(RCurl)
 library(svDialogs)
 library(jsonlite)
 library(httr)
@@ -13,15 +32,13 @@ library(modelr)
 library(readxl)
 library(xgboost)
 suppressMessages(library(mgcv))
+library(RCurl    , warn.conflicts = FALSE)
 library(log4r    , warn.conflicts = FALSE)
 library(rio      , warn.conflicts = FALSE)
 library(lubridate, warn.conflicts = FALSE)
 library(tidyverse)
 
-source("code/load.R" , encoding = "UTF-8")
-source("code/util.R" , encoding = "UTF-8")
-source("code/model.R", encoding = "UTF-8")
-source("code/car.R"  , encoding = "UTF-8")
+set_config(config(ssl_verifypeer=0L, ssl_verifyhost=0L))
 
 #=========#
 # Chemins #

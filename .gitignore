@@ -1,0 +1,22 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Histo files
+conso/*
+
+# Log files
+log/*
+
+# Inputs & outputs of run_se
+run/output/*
+run/input/*
+!run/input/test.xlsx
+
+# Inputs & outputs of run_cc
+run/cc/batch/*
+run/cc/output/*
+run/cc/reliquat/*
+run/cc/raw/*
+!run/cc/raw/1970-01-01.rds
